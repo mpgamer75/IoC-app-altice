@@ -25,11 +25,13 @@ export default function Home() {
     }
 
     // Cargar tema guardado
-    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
-    setTheme(savedTheme);
-    
-    // Aplicar tema al documento
-    document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' || 'light';
+      setTheme(savedTheme);
+      
+      // Aplicar tema al documento
+      document.documentElement.classList.toggle('dark', savedTheme === 'dark');
+    }
     
     setLoading(false);
   }, []);
@@ -58,13 +60,13 @@ export default function Home() {
     setTheme(newTheme);
     
     // Guardar tema en localStorage
-    localStorage.setItem('theme', newTheme);
-    
-    // Aplicar tema al documento
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
-    
-    // Mostrar notificación
     if (typeof window !== 'undefined') {
+      localStorage.setItem('theme', newTheme);
+      
+      // Aplicar tema al documento
+      document.documentElement.classList.toggle('dark', newTheme === 'dark');
+      
+      // Mostrar notificación
       const event = new CustomEvent('show-toast', {
         detail: {
           type: 'info',
@@ -76,9 +78,8 @@ export default function Home() {
   };
 
   const handleFormSuccess = () => {
-    setCurrentSection('dashboard');
-    
-    // Mostrar notificación de éxito
+    // NO navegar automáticamente al dashboard
+    // Solo mostrar notificación de éxito
     if (typeof window !== 'undefined') {
       const event = new CustomEvent('show-toast', {
         detail: {
@@ -88,6 +89,15 @@ export default function Home() {
       });
       window.dispatchEvent(event);
     }
+    
+    // Opcional: navegar al dashboard después de un delay
+    setTimeout(() => {
+      setCurrentSection('dashboard');
+    }, 2000);
+  };
+
+  const handleFormCancel = () => {
+    setCurrentSection('dashboard');
   };
 
   if (loading) {
@@ -129,7 +139,7 @@ export default function Home() {
             type="ip"
             theme={theme}
             onSuccess={handleFormSuccess}
-            onCancel={() => setCurrentSection('dashboard')}
+            onCancel={handleFormCancel}
           />
         );
       
@@ -139,7 +149,7 @@ export default function Home() {
             type="domain"
             theme={theme}
             onSuccess={handleFormSuccess}
-            onCancel={() => setCurrentSection('dashboard')}
+            onCancel={handleFormCancel}
           />
         );
       
@@ -149,7 +159,7 @@ export default function Home() {
             type="url"
             theme={theme}
             onSuccess={handleFormSuccess}
-            onCancel={() => setCurrentSection('dashboard')}
+            onCancel={handleFormCancel}
           />
         );
       
@@ -159,7 +169,7 @@ export default function Home() {
             type="hash"
             theme={theme}
             onSuccess={handleFormSuccess}
-            onCancel={() => setCurrentSection('dashboard')}
+            onCancel={handleFormCancel}
           />
         );
       

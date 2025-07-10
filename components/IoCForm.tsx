@@ -1,72 +1,139 @@
-const validateForm = (): boolean => {
+// components/IoCForm.tsx
+'use client';
+
+import { useState, useCallback } from 'react';
+import { IoC } from '@/types';
+import { IoCService } from '@/lib/ioc';
+
+interface IoCFormProps {
+  type: 'ip' | 'domain' | 'url' | 'hash';
+  theme: 'light' | 'dark';
+  onSuccess: () => void;
+  onCancel: () => void;
+}
+
+interface FormData {
+  value: string;
+  description: string;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  source: string;
+  reporter: string;
+  reporterEmail: string;
+  tags: string;
+  tlp: 'white' | 'green' | 'amber' | 'red';
+  confidence: number;
+  notes: string;
+  references: string;
+  firstSeen: string;
+  lastSeen: string;
+}
+
+export default function IoCForm({ type, theme, onSuccess, onCancel }: IoCFormProps) {
+  const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [isAdvanced, setIsAdvanced] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  
+  const [formData, setFormData] = useState<FormData>({
+    value: '',
+    description: '',
+    severity: 'medium',
+    source: '',
+    reporter: '',
+    reporterEmail: '',
+    tags: '',
+    tlp: 'white',
+    confidence: 50,
+    notes: '',
+    references: '',
+    firstSeen: '',
+    lastSeen: ''
+  });
+
+  const validateCurrentStep = useCallback((currentStep: number): boolean => {
     const newErrors: Record<string, string> = {};
 
-    // Validación de la valor según el tipo
-    if (!formData.value.trim()) {
-      newErrors.value = 'Este campo es obligatorio';
-    } else {
-      switch (type) {
-        case 'ip':
-          const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
-          if (!ipRegex.test(formData.value)) {
-            newErrors.value = 'Formato de IP inválido (ej: 192.168.1.1)';
-          }
-          break;
-        case 'domain':
-          const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
-          if (!domainRegex.test(formData.value)) {
-            newErrors.value = 'Formato de dominio inválido (ej: ejemplo.com)';
-          }
-          break;
-        case 'url':
-          try {
-            new URL(formData.value);
-          } catch {
-            newErrors.value = 'Formato de URL inválido (ej: https://ejemplo.com)';
-          }
-          break;
-        case 'hash':
-          const hashRegex = /^[a-fA-F0-9]{32,128}$/;
-          if (!hashRegex.test(formData.value)) {
-            newErrors.value = 'Formato de hash inválido (MD5, SHA1, SHA256, etc.)';
-          }
-          break;
+    if (currentStep === 1) {
+      // Validación paso 1: Información básica
+      if (!formData.value.trim()) {
+        newErrors.value = 'Este campo es obligatorio';
+      } else {
+        switch (type) {
+          case 'ip':
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!ipRegex.test(formData.value)) {
+              newErrors.value = 'Formato de IP inválido (ej: 192.168.1.1)';
+            }
+            break;
+          case 'domain':
+            const domainRegex = /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$/;
+            if (!domainRegex.test(formData.value)) {
+              newErrors.value = 'Formato de dominio inválido (ej: ejemplo.com)';
+            }
+            break;
+          case 'url':
+            try {
+              new URL(formData.value);
+            } catch {
+              newErrors.value = 'Formato de URL inválido (ej: https://ejemplo.com)';
+            }
+            break;
+          case 'hash':
+            const hashRegex = /^[a-fA-F0-9]{32,128}$/;
+            if (!hashRegex.test(formData.value)) {
+              newErrors.value = 'Formato de hash inválido (MD5, SHA1, SHA256, etc.)';
+            }
+            break;
+        }
+      }
+
+      if (!formData.description.trim()) {
+        newErrors.description = 'La descripción es obligatoria';
       }
     }
 
-    if (!formData.description.trim()) {
-      newErrors.description = 'La descripción es obligatoria';
-    }
+    if (currentStep === 2) {
+      // Validación paso 2: Información del reportador
+      if (!formData.reporter.trim()) {
+        newErrors.reporter = 'El nombre del reportador es obligatorio';
+      }
 
-    if (!formData.source.trim()) {
-      newErrors.source = 'La fuente es obligatoria';
-    }
+      if (!formData.reporterEmail.trim()) {
+        newErrors.reporterEmail = 'El email del reportador es obligatorio';
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(formData.reporterEmail)) {
+          newErrors.reporterEmail = 'Formato de email inválido';
+        }
+      }
 
-    if (!formData.reporter.trim()) {
-      newErrors.reporter = 'El nombre del reportador es obligatorio';
-    }
+      if (!formData.source.trim()) {
+        newErrors.source = 'La fuente es obligatoria';
+      }
 
-    if (!formData.reporterEmail.trim()) {
-      newErrors.reporterEmail = 'El email del reportador es obligatorio';
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(formData.reporterEmail)) {
-        newErrors.reporterEmail = 'Formato de email inválido';
+      if (formData.confidence < 0 || formData.confidence > 100) {
+        newErrors.confidence = 'La confianza debe estar entre 0 y 100';
       }
     }
 
-    if (formData.confidence < 0 || formData.confidence > 100) {
-      newErrors.confidence = 'La confianza debe estar entre 0 y 100';
-    }
+    // Paso 3 no requiere validación obligatoria
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  }, [formData, type]);
+
+  const validateForm = (): boolean => {
+    return validateCurrentStep(1) && validateCurrentStep(2);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    if (!validateForm()) {
+      // Si hay errores, volver al primer paso con errores
+      setStep(1);
+      return;
+    }
 
     setLoading(true);
     try {
@@ -110,6 +177,43 @@ const validateForm = (): boolean => {
     }
   };
 
+  const nextStep = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    // Validar el paso actual antes de avanzar
+    if (!validateCurrentStep(step)) {
+      return;
+    }
+    
+    if (step < 3) {
+      setStep(prevStep => prevStep + 1);
+      setErrors({}); // Limpiar errores al avanzar
+    }
+  }, [step, validateCurrentStep]);
+
+  const prevStep = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    
+    if (step > 1) {
+      setStep(prevStep => prevStep - 1);
+      setErrors({}); // Limpiar errores al retroceder
+    }
+  }, [step]);
+
+  const handleCancel = useCallback((e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    onCancel();
+  }, [onCancel]);
+
   const getTypeLabel = () => {
     switch (type) {
       case 'ip': return 'Dirección IP';
@@ -148,14 +252,6 @@ const validateForm = (): boolean => {
       case 'hash': return 'from-orange-500 to-orange-600';
       default: return 'from-gray-500 to-gray-600';
     }
-  };
-
-  const nextStep = () => {
-    if (step < 3) setStep(step + 1);
-  };
-
-  const prevStep = () => {
-    if (step > 1) setStep(step - 1);
   };
 
   const getSeverityLabel = (severity: string) => {
@@ -209,7 +305,7 @@ const validateForm = (): boolean => {
             <div className="flex space-x-2">
               {[1, 2, 3].map((s) => (
                 <div
-                  key={s}
+                  key={`step-indicator-${type}-${s}`}
                   className={`w-8 h-2 rounded-full transition-all duration-300 ${
                     s <= step ? 'bg-red-500' : theme === 'dark' ? 'bg-gray-600' : 'bg-gray-300'
                   }`}
@@ -220,16 +316,16 @@ const validateForm = (): boolean => {
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <div className="space-y-8">
         {/* Paso 1: Información básica */}
         {step === 1 && (
-          <div className="space-y-6 animate-slide-in-right">
+          <div className="space-y-6 animate-slide-in-right" key={`step-1-content-${type}`}>
             <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
               📝 Información Básica
             </h3>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`value-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -239,7 +335,7 @@ const validateForm = (): boolean => {
                 <input
                   type="text"
                   value={formData.value}
-                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, value: e.target.value }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     errors.value 
                       ? 'border-red-500 bg-red-50' 
@@ -259,7 +355,7 @@ const validateForm = (): boolean => {
                 )}
               </div>
 
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`severity-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -268,7 +364,7 @@ const validateForm = (): boolean => {
                 </label>
                 <select
                   value={formData.severity}
-                  onChange={(e) => setFormData({ ...formData, severity: e.target.value as any })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, severity: e.target.value as any }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     theme === 'dark'
                       ? 'border-gray-600 bg-gray-700 text-white focus:border-red-500'
@@ -283,7 +379,7 @@ const validateForm = (): boolean => {
               </div>
             </div>
 
-            <div className="space-y-2 dynamic-input">
+            <div className="space-y-2" key={`description-input-${type}`}>
               <label className={`block text-sm font-bold mb-2 flex items-center ${
                 theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
               }`}>
@@ -292,7 +388,7 @@ const validateForm = (): boolean => {
               </label>
               <textarea
                 value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
                 className={`w-full px-4 py-3 border-2 rounded-xl resize-none transition-all duration-200 ${
                   errors.description 
@@ -317,13 +413,13 @@ const validateForm = (): boolean => {
 
         {/* Paso 2: Información del reportador */}
         {step === 2 && (
-          <div className="space-y-6 animate-slide-in-right">
+          <div className="space-y-6 animate-slide-in-right" key={`step-2-content-${type}`}>
             <h3 className={`text-xl font-bold mb-4 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
               👤 Información del Reportador
             </h3>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`reporter-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -333,7 +429,7 @@ const validateForm = (): boolean => {
                 <input
                   type="text"
                   value={formData.reporter}
-                  onChange={(e) => setFormData({ ...formData, reporter: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reporter: e.target.value }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     errors.reporter 
                       ? 'border-red-500 bg-red-50' 
@@ -353,7 +449,7 @@ const validateForm = (): boolean => {
                 )}
               </div>
 
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`email-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -363,7 +459,7 @@ const validateForm = (): boolean => {
                 <input
                   type="email"
                   value={formData.reporterEmail}
-                  onChange={(e) => setFormData({ ...formData, reporterEmail: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, reporterEmail: e.target.value }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     errors.reporterEmail 
                       ? 'border-red-500 bg-red-50' 
@@ -385,7 +481,7 @@ const validateForm = (): boolean => {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`source-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -395,7 +491,7 @@ const validateForm = (): boolean => {
                 <input
                   type="text"
                   value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, source: e.target.value }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     errors.source 
                       ? 'border-red-500 bg-red-50' 
@@ -415,7 +511,7 @@ const validateForm = (): boolean => {
                 )}
               </div>
 
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`confidence-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -428,7 +524,7 @@ const validateForm = (): boolean => {
                     min="0"
                     max="100"
                     value={formData.confidence}
-                    onChange={(e) => setFormData({ ...formData, confidence: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, confidence: parseInt(e.target.value) }))}
                     className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                     style={{
                       background: `linear-gradient(to right, #ef4444 0%, #f59e0b 25%, #eab308 50%, #22c55e 75%, #10b981 100%)`
@@ -449,7 +545,7 @@ const validateForm = (): boolean => {
 
         {/* Paso 3: Información adicional */}
         {step === 3 && (
-          <div className="space-y-6 animate-slide-in-right">
+          <div className="space-y-6 animate-slide-in-right" key={`step-3-content-${type}`}>
             <div className="flex items-center justify-between">
               <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 🔧 Información Adicional
@@ -470,7 +566,7 @@ const validateForm = (): boolean => {
             </div>
             
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`tags-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -480,7 +576,7 @@ const validateForm = (): boolean => {
                 <input
                   type="text"
                   value={formData.tags}
-                  onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tags: e.target.value }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     theme === 'dark'
                       ? 'border-gray-600 bg-gray-700 text-white placeholder-gray-400 focus:border-red-500'
@@ -493,7 +589,7 @@ const validateForm = (): boolean => {
                 </p>
               </div>
 
-              <div className="space-y-2 dynamic-input">
+              <div className="space-y-2" key={`tlp-input-${type}`}>
                 <label className={`block text-sm font-bold mb-2 flex items-center ${
                   theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                 }`}>
@@ -502,7 +598,7 @@ const validateForm = (): boolean => {
                 </label>
                 <select
                   value={formData.tlp}
-                  onChange={(e) => setFormData({ ...formData, tlp: e.target.value as any })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, tlp: e.target.value as any }))}
                   className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                     theme === 'dark'
                       ? 'border-gray-600 bg-gray-700 text-white focus:border-red-500'
@@ -518,9 +614,9 @@ const validateForm = (): boolean => {
             </div>
 
             {isAdvanced && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-6 animate-fade-in" key={`advanced-options-${type}`}>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2 dynamic-input">
+                  <div className="space-y-2" key={`first-seen-${type}`}>
                     <label className={`block text-sm font-bold mb-2 flex items-center ${
                       theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                     }`}>
@@ -530,7 +626,7 @@ const validateForm = (): boolean => {
                     <input
                       type="date"
                       value={formData.firstSeen}
-                      onChange={(e) => setFormData({ ...formData, firstSeen: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, firstSeen: e.target.value }))}
                       className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                         theme === 'dark'
                           ? 'border-gray-600 bg-gray-700 text-white focus:border-red-500'
@@ -539,7 +635,7 @@ const validateForm = (): boolean => {
                     />
                   </div>
 
-                  <div className="space-y-2 dynamic-input">
+                  <div className="space-y-2" key={`last-seen-${type}`}>
                     <label className={`block text-sm font-bold mb-2 flex items-center ${
                       theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                     }`}>
@@ -549,7 +645,7 @@ const validateForm = (): boolean => {
                     <input
                       type="date"
                       value={formData.lastSeen}
-                      onChange={(e) => setFormData({ ...formData, lastSeen: e.target.value })}
+                      onChange={(e) => setFormData(prev => ({ ...prev, lastSeen: e.target.value }))}
                       className={`w-full px-4 py-3 border-2 rounded-xl transition-all duration-200 ${
                         theme === 'dark'
                           ? 'border-gray-600 bg-gray-700 text-white focus:border-red-500'
@@ -559,7 +655,7 @@ const validateForm = (): boolean => {
                   </div>
                 </div>
 
-                <div className="space-y-2 dynamic-input">
+                <div className="space-y-2" key={`notes-${type}`}>
                   <label className={`block text-sm font-bold mb-2 flex items-center ${
                     theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                   }`}>
@@ -568,7 +664,7 @@ const validateForm = (): boolean => {
                   </label>
                   <textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     rows={4}
                     className={`w-full px-4 py-3 border-2 rounded-xl resize-none transition-all duration-200 ${
                       theme === 'dark'
@@ -579,7 +675,7 @@ const validateForm = (): boolean => {
                   />
                 </div>
 
-                <div className="space-y-2 dynamic-input">
+                <div className="space-y-2" key={`references-${type}`}>
                   <label className={`block text-sm font-bold mb-2 flex items-center ${
                     theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
                   }`}>
@@ -588,7 +684,7 @@ const validateForm = (): boolean => {
                   </label>
                   <textarea
                     value={formData.references}
-                    onChange={(e) => setFormData({ ...formData, references: e.target.value })}
+                    onChange={(e) => setFormData(prev => ({ ...prev, references: e.target.value }))}
                     rows={4}
                     className={`w-full px-4 py-3 border-2 rounded-xl resize-none transition-all duration-200 ${
                       theme === 'dark'
@@ -609,7 +705,7 @@ const validateForm = (): boolean => {
         {errors.submit && (
           <div className={`border-l-4 border-red-400 p-4 animate-fade-in ${
             theme === 'dark' ? 'bg-red-900/20' : 'bg-red-50'
-          }`}>
+          }`} key={`submit-error-${type}`}>
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -628,11 +724,11 @@ const validateForm = (): boolean => {
         {/* Botones de navegación */}
         <div className={`flex justify-between pt-8 border-t ${
           theme === 'dark' ? 'border-gray-700' : 'border-gray-200'
-        }`}>
+        }`} key={`navigation-buttons-${type}`}>
           <div className="flex space-x-4">
             <button
               type="button"
-              onClick={onCancel}
+              onClick={handleCancel}
               className={`px-8 py-3 border-2 rounded-lg font-medium transition-all duration-200 ${
                 theme === 'dark'
                   ? 'border-gray-600 text-gray-300 hover:bg-gray-700 hover:border-gray-500'
@@ -667,32 +763,34 @@ const validateForm = (): boolean => {
                 Siguiente →
               </button>
             ) : (
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Creando...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
-                    </svg>
-                    Crear IoC
-                  </>
-                )}
-              </button>
+              <form onSubmit={handleSubmit} className="inline">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-primary px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                >
+                  {loading ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Creando...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
+                      </svg>
+                      Crear IoC
+                    </>
+                  )}
+                </button>
+              </form>
             )}
           </div>
         </div>
-      </form>
+      </div>
 
       {/* Estilos para el slider */}
       <style jsx>{`
@@ -727,20 +825,7 @@ const validateForm = (): boolean => {
           transform: scale(1.1);
           box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
         }
-
-        .dynamic-input {
-          animation: slideInUp 0.5s ease-out forwards;
-          opacity: 0;
-          transform: translateY(20px);
-        }
-
-        @keyframes slideInUp {
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
       `}</style>
     </div>
   );
-  
+}

@@ -5,7 +5,11 @@ import { useState } from 'react';
 import { IoCService } from '@/lib/ioc';
 import { ExportData } from '@/types';
 
-export default function ExportSection() {
+interface ExportSectionProps {
+  theme: 'light' | 'dark';
+}
+
+export default function ExportSection({ theme }: ExportSectionProps) {
   const [selectedFormat, setSelectedFormat] = useState<'txt' | 'json' | 'csv'>('json');
   const [loading, setLoading] = useState(false);
   const [exportedData, setExportedData] = useState<ExportData | null>(null);
@@ -16,7 +20,7 @@ export default function ExportSection() {
       const data = await IoCService.exportIoCs(selectedFormat);
       setExportedData(data);
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error('Error en la exportación:', error);
     } finally {
       setLoading(false);
     }
@@ -44,21 +48,29 @@ export default function ExportSection() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">Export des IoCs</h2>
-        <p className="text-gray-600 mb-6">
-          Exportez vos indicateurs de compromission vers FortiGate dans différents formats.
+      <div className={`card animate-fade-in ${
+        theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'
+      }`}>
+        <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+          Exportación de IoCs
+        </h2>
+        <p className={`mb-6 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+          Exporte sus indicadores de compromiso para FortiGate en diferentes formatos.
         </p>
 
-        {/* Format Selection */}
+        {/* Selección de formato */}
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-3">Format d'export</h3>
+          <h3 className={`text-lg font-semibold mb-3 ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+            Formato de exportación
+          </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div 
               className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedFormat === 'txt' 
-                ? 'border-red-500 bg-red-50' 
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                : theme === 'dark'
+                  ? 'border-gray-600 hover:border-gray-500 bg-gray-700'
+                  : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
               onClick={() => setSelectedFormat('txt')}
             >
@@ -69,21 +81,23 @@ export default function ExportSection() {
                   readOnly
                   className="text-red-600"
                 />
-                <span className="ml-2 font-semibold">TXT</span>
+                <span className={`ml-2 font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>TXT</span>
               </div>
-              <p className="text-sm text-gray-600">
-                Liste simple des valeurs IoC, compatible avec la plupart des systèmes.
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                Lista simple de valores IoC, compatible con la mayoría de sistemas.
               </p>
-              <div className="mt-2 text-xs text-gray-500">
-                Exemple: Une IP/domaine par ligne
+              <div className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                Ejemplo: Una IP/dominio por línea
               </div>
             </div>
 
             <div 
               className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedFormat === 'json' 
-                ? 'border-red-500 bg-red-50' 
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                : theme === 'dark'
+                  ? 'border-gray-600 hover:border-gray-500 bg-gray-700'
+                  : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
               onClick={() => setSelectedFormat('json')}
             >
@@ -94,21 +108,23 @@ export default function ExportSection() {
                   readOnly
                   className="text-red-600"
                 />
-                <span className="ml-2 font-semibold">JSON</span>
+                <span className={`ml-2 font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>JSON</span>
               </div>
-              <p className="text-sm text-gray-600">
-                Format structuré avec toutes les métadonnées, idéal pour FortiGate.
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                Formato estructurado con todos los metadatos, ideal para FortiGate.
               </p>
-              <div className="mt-2 text-xs text-gray-500">
-                Inclut: sévérité, tags, rapporteur, etc.
+              <div className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                Incluye: severidad, etiquetas, reportador, etc.
               </div>
             </div>
 
             <div 
               className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                 selectedFormat === 'csv' 
-                ? 'border-red-500 bg-red-50' 
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-red-500 bg-red-50 dark:bg-red-900/20' 
+                : theme === 'dark'
+                  ? 'border-gray-600 hover:border-gray-500 bg-gray-700'
+                  : 'border-gray-200 hover:border-gray-300 bg-white'
               }`}
               onClick={() => setSelectedFormat('csv')}
             >
@@ -119,28 +135,32 @@ export default function ExportSection() {
                   readOnly
                   className="text-red-600"
                 />
-                <span className="ml-2 font-semibold">CSV</span>
+                <span className={`ml-2 font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>CSV</span>
               </div>
-              <p className="text-sm text-gray-600">
-                Format tabulaire pour analyse et import dans des outils externes.
+              <p className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                Formato tabular para análisis e importación en herramientas externas.
               </p>
-              <div className="mt-2 text-xs text-gray-500">
-                Compatible Excel, databases, etc.
+              <div className={`mt-2 text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                Compatible con Excel, bases de datos, etc.
               </div>
             </div>
           </div>
         </div>
 
-        {/* Export Actions */}
+        {/* Acciones de exportación */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">Actions d'export</h3>
-            <p className="text-sm text-gray-600">Générez et téléchargez le fichier d'export</p>
+            <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+              Acciones de exportación
+            </h3>
+            <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+              Genere y descargue el archivo de exportación
+            </p>
           </div>
           <button
             onClick={handleExport}
             disabled={loading}
-            className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 focus:ring-2 focus:ring-red-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="btn-primary px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {loading ? (
               <>
@@ -148,24 +168,26 @@ export default function ExportSection() {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Génération...
+                Generando...
               </>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                 </svg>
-                Générer Export
+                Generar Exportación
               </>
             )}
           </button>
         </div>
 
-        {/* Export Preview */}
+        {/* Vista previa de la exportación */}
         {exportedData && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Aperçu de l'export</h3>
+              <h3 className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                Vista previa de la exportación
+              </h3>
               <div className="flex space-x-2">
                 <button
                   onClick={downloadFile}
@@ -174,29 +196,39 @@ export default function ExportSection() {
                   <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z"/>
                   </svg>
-                  Télécharger
+                  Descargar
                 </button>
                 <button
                   onClick={() => setExportedData(null)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    theme === 'dark'
+                      ? 'bg-gray-600 text-white hover:bg-gray-500'
+                      : 'bg-gray-500 text-white hover:bg-gray-600'
+                  }`}
                 >
-                  Fermer
+                  Cerrar
                 </button>
               </div>
             </div>
 
-            <div className="bg-gray-50 border rounded-lg p-4">
+            <div className={`border rounded-lg p-4 ${
+              theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-gray-50 border-gray-200'
+            }`}>
               <div className="flex items-center justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">
-                  {exportedData.iocs.length} IoCs exportés • Format: {selectedFormat.toUpperCase()}
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                  {exportedData.iocs.length} IoCs exportados • Formato: {selectedFormat.toUpperCase()}
                 </span>
-                <span className="text-xs text-gray-500">
-                  Généré le {exportedData.timestamp.toLocaleString('fr-FR')}
+                <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Generado el {exportedData.timestamp.toLocaleString('es-ES')}
                 </span>
               </div>
-              <pre className="text-xs text-gray-600 max-h-64 overflow-auto bg-white p-3 rounded border">
+              <pre className={`text-xs max-h-64 overflow-auto p-3 rounded border ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 text-gray-300 border-gray-600' 
+                  : 'bg-white text-gray-600 border-gray-300'
+              }`}>
                 {previewContent.length > 2000 
-                  ? previewContent.substring(0, 2000) + '\n...\n[Contenu tronqué - télécharger pour voir l\'intégralité]'
+                  ? previewContent.substring(0, 2000) + '\n...\n[Contenido truncado - descargar para ver la totalidad]'
                   : previewContent
                 }
               </pre>
@@ -204,33 +236,41 @@ export default function ExportSection() {
           </div>
         )}
 
-        {/* Integration Instructions */}
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3 flex items-center">
+        {/* Instrucciones de integración */}
+        <div className={`mt-8 border rounded-lg p-6 ${
+          theme === 'dark' 
+            ? 'bg-blue-900/20 border-blue-800' 
+            : 'bg-blue-50 border-blue-200'
+        }`}>
+          <h3 className={`text-lg font-semibold mb-3 flex items-center ${
+            theme === 'dark' ? 'text-blue-300' : 'text-blue-900'
+          }`}>
             <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
               <path d="M11,9H13V7H11M12,20C7.59,20 4,16.41 4,12C4,7.59 7.59,4 12,4C16.41,4 20,7.59 20,12C20,16.41 16.41,20 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M11,17H13V11H11V17Z"/>
             </svg>
-            Instructions d'intégration FortiGate
+            Instrucciones de integración FortiGate
           </h3>
-          <div className="space-y-3 text-sm text-blue-800">
+          <div className={`space-y-3 text-sm ${theme === 'dark' ? 'text-blue-200' : 'text-blue-800'}`}>
             <div>
-              <strong>Format TXT :</strong>
-              <p>Utilisez directement dans FortiGate via Security Fabric → Threat Feeds → External Block List</p>
+              <strong>Formato TXT:</strong>
+              <p>Use directamente en FortiGate via Security Fabric → Threat Feeds → External Block List</p>
             </div>
             <div>
-              <strong>Format JSON :</strong>
-              <p>Importez via l'API FortiGate ou utilisez FortiManager pour un déploiement automatisé</p>
+              <strong>Formato JSON:</strong>
+              <p>Importe via API FortiGate o use FortiManager para despliegue automatizado</p>
             </div>
             <div>
-              <strong>Format CSV :</strong>
-              <p>Convertissez en format FortiGate ou utilisez pour l'analyse dans des outils tiers</p>
+              <strong>Formato CSV:</strong>
+              <p>Convierta a formato FortiGate o use para análisis en herramientas externas</p>
             </div>
           </div>
         </div>
 
-        {/* Export Statistics */}
+        {/* Estadísticas de exportación */}
         <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white border rounded-lg p-4">
+          <div className={`border rounded-lg p-4 ${
+            theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+          }`}>
             <div className="flex items-center">
               <div className="p-2 bg-red-100 rounded-lg">
                 <svg className="w-5 h-5 text-red-600" fill="currentColor" viewBox="0 0 24 24">
@@ -238,13 +278,19 @@ export default function ExportSection() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">Total IoCs</p>
-                <p className="text-lg font-bold text-gray-900">{exportedData?.iocs.length || '-'}</p>
+                <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Total IoCs
+                </p>
+                <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  {exportedData?.iocs.length || '-'}
+                </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border rounded-lg p-4">
+          <div className={`border rounded-lg p-4 ${
+            theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+          }`}>
             <div className="flex items-center">
               <div className="p-2 bg-green-100 rounded-lg">
                 <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 24 24">
@@ -252,15 +298,19 @@ export default function ExportSection() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">Approuvés</p>
-                <p className="text-lg font-bold text-gray-900">
+                <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Aprobados
+                </p>
+                <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                   {exportedData?.iocs.filter(ioc => ioc.status === 'approved').length || '-'}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white border rounded-lg p-4">
+          <div className={`border rounded-lg p-4 ${
+            theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-200'
+          }`}>
             <div className="flex items-center">
               <div className="p-2 bg-orange-100 rounded-lg">
                 <svg className="w-5 h-5 text-orange-600" fill="currentColor" viewBox="0 0 24 24">
@@ -268,8 +318,10 @@ export default function ExportSection() {
                 </svg>
               </div>
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-600">Critique/Élevé</p>
-                <p className="text-lg font-bold text-gray-900">
+                <p className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
+                  Crítico/Alto
+                </p>
+                <p className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                   {exportedData?.iocs.filter(ioc => ioc.severity === 'critical' || ioc.severity === 'high').length || '-'}
                 </p>
               </div>
