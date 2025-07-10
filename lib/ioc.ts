@@ -1,17 +1,17 @@
 // lib/ioc.ts
 import { IoC, DashboardStats, ExportData } from '@/types';
 
-// Mock data pour les IoCs
+// Datos mock para los IoCs
 const MOCK_IOCS: IoC[] = [
   {
     id: '1',
     type: 'ip',
     value: '192.168.1.100',
-    description: 'Suspicious IP detected in network traffic',
+    description: 'IP sospechosa detectada en el tráfico de red',
     severity: 'high',
-    source: 'Network Monitoring',
-    reporter: 'John Doe',
-    reporterEmail: 'john.doe@company.com',
+    source: 'Monitoreo de Red',
+    reporter: 'Juan Pérez',
+    reporterEmail: 'juan.perez@empresa.com',
     dateReported: new Date('2024-07-01'),
     status: 'approved',
     tags: ['malware', 'botnet'],
@@ -19,43 +19,62 @@ const MOCK_IOCS: IoC[] = [
     confidence: 85,
     firstSeen: new Date('2024-06-30'),
     lastSeen: new Date('2024-07-01'),
-    notes: 'Detected multiple connections to known C&C servers',
-    references: ['https://threatintel.com/report/123']
+    notes: 'Se detectaron múltiples conexiones a servidores C&C conocidos',
+    references: ['https://threatintel.com/reporte/123']
   },
   {
     id: '2',
     type: 'domain',
-    value: 'malicious-site.com',
-    description: 'Phishing domain targeting corporate users',
+    value: 'sitio-malicioso.com',
+    description: 'Dominio de phishing dirigido a usuarios corporativos',
     severity: 'critical',
-    source: 'Email Security',
-    reporter: 'Jane Smith',
-    reporterEmail: 'jane.smith@company.com',
+    source: 'Seguridad de Correo',
+    reporter: 'María García',
+    reporterEmail: 'maria.garcia@empresa.com',
     dateReported: new Date('2024-07-02'),
     status: 'approved',
-    tags: ['phishing', 'credential-theft'],
+    tags: ['phishing', 'robo-credenciales'],
     tlp: 'red',
     confidence: 95,
     firstSeen: new Date('2024-07-01'),
     lastSeen: new Date('2024-07-02'),
-    notes: 'Used in targeted phishing campaign',
+    notes: 'Utilizado en campaña de phishing dirigida',
     references: ['https://phishtank.com/phish_detail.php?phish_id=123']
   },
   {
     id: '3',
     type: 'hash',
     value: 'a1b2c3d4e5f6789012345678901234567890abcd',
-    description: 'Malware hash detected',
+    description: 'Hash de malware detectado',
     severity: 'medium',
-    source: 'Endpoint Detection',
-    reporter: 'Security Team',
-    reporterEmail: 'security@company.com',
+    source: 'Detección de Endpoints',
+    reporter: 'Equipo de Seguridad',
+    reporterEmail: 'seguridad@empresa.com',
     dateReported: new Date('2024-07-03'),
     status: 'pending',
-    tags: ['malware', 'trojan'],
+    tags: ['malware', 'troyano'],
     tlp: 'green',
     confidence: 70,
-    notes: 'Needs verification'
+    notes: 'Necesita verificación adicional'
+  },
+  {
+    id: '4',
+    type: 'url',
+    value: 'https://descarga-malware.net/payload.exe',
+    description: 'URL maliciosa que distribuye malware',
+    severity: 'high',
+    source: 'Análisis Web',
+    reporter: 'Carlos Rodriguez',
+    reporterEmail: 'carlos.rodriguez@empresa.com',
+    dateReported: new Date('2024-07-04'),
+    status: 'approved',
+    tags: ['malware', 'descarga-maliciosa'],
+    tlp: 'amber',
+    confidence: 90,
+    firstSeen: new Date('2024-07-03'),
+    lastSeen: new Date('2024-07-04'),
+    notes: 'Distribuye ransomware conocido',
+    references: ['https://virustotal.com/url/analysis']
   }
 ];
 
@@ -110,7 +129,7 @@ export class IoCService {
     
     const iocs = this.iocs;
     
-    // Calculate stats
+    // Calcular estadísticas
     const iocsByType = iocs.reduce((acc, ioc) => {
       acc[ioc.type] = (acc[ioc.type] || 0) + 1;
       return acc;
@@ -136,7 +155,7 @@ export class IoCService {
     .sort((a, b) => b.count - a.count)
     .slice(0, 5);
     
-    // Generate weekly trend (last 7 days)
+    // Generar tendencia semanal (últimos 7 días)
     const weeklyTrend = Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - (6 - i));
@@ -185,14 +204,14 @@ export class IoCService {
       case 'csv':
         return this.generateCsvExport(exportData.iocs);
       default:
-        throw new Error('Unsupported export format');
+        throw new Error('Formato de exportación no soportado');
     }
   }
   
   private static generateTxtExport(iocs: IoC[]): string {
-    let content = `# FortiGate IoC Export\n`;
-    content += `# Generated: ${new Date().toISOString()}\n`;
-    content += `# Total IoCs: ${iocs.length}\n\n`;
+    let content = `# Exportación de IoCs de FortiGate\n`;
+    content += `# Generado: ${new Date().toISOString()}\n`;
+    content += `# Total de IoCs: ${iocs.length}\n\n`;
     
     iocs.forEach(ioc => {
       content += `${ioc.value}\n`;
@@ -203,10 +222,10 @@ export class IoCService {
   
   private static generateJsonExport(iocs: IoC[]): string {
     const exportObj = {
-      metadata: {
-        generated: new Date().toISOString(),
+      metadatos: {
+        generado: new Date().toISOString(),
         total: iocs.length,
-        format: 'json'
+        formato: 'json'
       },
       iocs: iocs.map(ioc => ({
         ...ioc,
@@ -221,9 +240,9 @@ export class IoCService {
   
   private static generateCsvExport(iocs: IoC[]): string {
     const headers = [
-      'id', 'type', 'value', 'description', 'severity', 'source',
-      'reporter', 'reporterEmail', 'dateReported', 'status',
-      'tags', 'tlp', 'confidence', 'notes'
+      'id', 'tipo', 'valor', 'descripcion', 'severidad', 'fuente',
+      'reportador', 'emailReportador', 'fechaReporte', 'estado',
+      'etiquetas', 'tlp', 'confianza', 'notas'
     ];
     
     let content = headers.join(',') + '\n';

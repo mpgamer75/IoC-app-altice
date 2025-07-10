@@ -1,7 +1,7 @@
 // lib/auth.ts
 import { User } from '@/types';
 
-// Mock users pour la démo
+// Usuarios mock para la demostración
 const MOCK_USERS: User[] = [
   {
     id: '1',
@@ -12,15 +12,15 @@ const MOCK_USERS: User[] = [
   },
   {
     id: '2',
-    username: 'analyst',
-    email: 'analyst@fortinet.com',
+    username: 'analista',
+    email: 'analista@fortinet.com',
     role: 'user',
     createdAt: new Date('2024-01-15')
   },
   {
     id: '3',
-    username: 'security',
-    email: 'security@fortinet.com',
+    username: 'seguridad',
+    email: 'seguridad@fortinet.com',
     role: 'user',
     createdAt: new Date('2024-02-01')
   }
@@ -30,13 +30,13 @@ export class AuthService {
   private static readonly TOKEN_KEY = 'fortigate_ioc_token';
   
   static async login(username: string, password: string): Promise<User | null> {
-    // Mock authentication - en production, remplacer par un vrai service d'auth
-    await new Promise(resolve => setTimeout(resolve, 500)); // Simulate API call
+    // Autenticación mock - en producción, reemplazar por un servicio real
+    await new Promise(resolve => setTimeout(resolve, 500)); // Simular llamada API
     
     const validCredentials = [
       { username: 'admin', password: 'admin123' },
-      { username: 'analyst', password: 'analyst123' },
-      { username: 'security', password: 'security123' }
+      { username: 'analista', password: 'analista123' },
+      { username: 'seguridad', password: 'seguridad123' }
     ];
     
     const credential = validCredentials.find(

@@ -25,10 +25,10 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
       if (user) {
         onLogin(user);
       } else {
-        setError('Identifiants invalides');
+        setError('Credenciales inválidas');
       }
     } catch (err) {
-      setError('Erreur de connexion');
+      setError('Error de conexión');
     } finally {
       setLoading(false);
     }
@@ -36,7 +36,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-indigo-900 relative overflow-hidden">
-      {/* Background Animation */}
+      {/* Animación de fondo */}
       <div className="absolute inset-0">
         <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-red-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float"></div>
         <div className="absolute top-1/3 right-1/4 w-72 h-72 bg-yellow-500 rounded-full mix-blend-multiply filter blur-xl opacity-20 animate-float" style={{ animationDelay: '2s' }}></div>
@@ -53,41 +53,41 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
           <h1 className="text-4xl font-bold text-gray-900 mb-3 bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
             FortiGate IoC
           </h1>
-          <p className="text-gray-600 text-lg">Gestionnaire d'Indicateurs de Compromission</p>
+          <p className="text-gray-700 text-lg">Gestor de Indicadores de Compromiso</p>
           <div className="w-24 h-1 bg-gradient-to-r from-red-500 to-red-600 mx-auto mt-3 rounded-full"></div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="space-y-2">
-            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+            <label className="block text-sm font-bold text-gray-800 mb-2 flex items-center">
               <svg className="w-4 h-4 mr-2 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
               </svg>
-              Nom d'utilisateur
+              Nombre de usuario
             </label>
             <input
               type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="form-input w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/50 backdrop-blur-sm"
-              placeholder="Entrez votre nom d'utilisateur"
+              className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+              placeholder="Ingrese su nombre de usuario"
               required
             />
           </div>
 
           <div className="space-y-2">
-            <label className="block text-sm font-bold text-gray-700 mb-2 flex items-center">
+            <label className="block text-sm font-bold text-gray-800 mb-2 flex items-center">
               <svg className="w-4 h-4 mr-2 text-red-600" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10A2,2 0 0,1 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z"/>
               </svg>
-              Mot de passe
+              Contraseña
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="form-input w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white/50 backdrop-blur-sm"
-              placeholder="Entrez votre mot de passe"
+              className="w-full px-4 py-4 border-2 border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 transition-all duration-200 bg-white text-gray-900 placeholder-gray-500"
+              placeholder="Ingrese su contraseña"
               required
             />
           </div>
@@ -118,31 +118,31 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                Connexion en cours...
+                Iniciando sesión...
               </>
             ) : (
               <>
                 <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M10,17V14H3V10H10V7L15,12L10,17M10,2H19A2,2 0 0,1 21,4V20A2,2 0 0,1 19,22H10A2,2 0 0,1 8,20V18H10V20H19V4H10V6H8V4A2,2 0 0,1 10,2Z"/>
                 </svg>
-                Se connecter
+                Iniciar sesión
               </>
             )}
           </button>
         </form>
 
         <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl border border-gray-200">
-          <h3 className="text-sm font-bold text-gray-700 mb-4 flex items-center">
+          <h3 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
             <svg className="w-4 h-4 mr-2 text-green-600" fill="currentColor" viewBox="0 0 24 24">
               <path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
             </svg>
-            Comptes de démonstration
+            Cuentas de demostración
           </h3>
           <div className="space-y-3">
             {[
-              { role: 'Administrateur', user: 'admin', pass: 'admin123', color: 'from-red-500 to-red-600' },
-              { role: 'Analyste', user: 'analyst', pass: 'analyst123', color: 'from-blue-500 to-blue-600' },
-              { role: 'Sécurité', user: 'security', pass: 'security123', color: 'from-green-500 to-green-600' }
+              { role: 'Administrador', user: 'admin', pass: 'admin123', color: 'from-red-500 to-red-600' },
+              { role: 'Analista', user: 'analista', pass: 'analista123', color: 'from-blue-500 to-blue-600' },
+              { role: 'Seguridad', user: 'seguridad', pass: 'seguridad123', color: 'from-green-500 to-green-600' }
             ].map((account, index) => (
               <div 
                 key={account.user}
@@ -160,7 +160,7 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
                   </div>
                   <div>
                     <div className="text-sm font-bold text-gray-900">{account.role}</div>
-                    <div className="text-xs text-gray-500">{account.user} / {account.pass}</div>
+                    <div className="text-xs text-gray-600">{account.user} / {account.pass}</div>
                   </div>
                 </div>
                 <svg className="w-4 h-4 text-gray-400 group-hover:text-red-600 transition-colors" fill="currentColor" viewBox="0 0 24 24">
@@ -172,8 +172,8 @@ export default function LoginForm({ onLogin }: LoginFormProps) {
         </div>
 
         <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            Sécurisé par FortiGate • Version 1.0.0
+          <p className="text-xs text-gray-600">
+            Protegido por FortiGate • Versión 1.0.0
           </p>
         </div>
       </div>

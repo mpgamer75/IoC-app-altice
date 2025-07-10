@@ -19,7 +19,7 @@ export interface IoC {
   dateReported: Date;
   status: 'pending' | 'approved' | 'rejected';
   tags: string[];
-  tlp: 'white' | 'green' | 'amber' | 'red'; // Traffic Light Protocol
+  tlp: 'white' | 'green' | 'amber' | 'red';
   confidence: number; // 0-100
   lastSeen?: Date;
   firstSeen?: Date;
@@ -46,4 +46,8 @@ export interface ExportData {
   format: 'txt' | 'json' | 'csv';
   iocs: IoC[];
   timestamp: Date;
+}
+
+export interface Theme {
+  mode: 'light' | 'dark';
 }
