@@ -1,8 +1,10 @@
 // components/Layout.tsx
 'use client';
 
-import { User } from '@/types';
+import { useState, useEffect } from 'react';
+import { User, DashboardStats } from '@/types';
 import { AuthService } from '@/lib/auth';
+import { IoCService } from '@/lib/ioc';
 import ToastContainer from './ToastContainer';
 
 interface LayoutProps {
@@ -16,6 +18,9 @@ interface LayoutProps {
 }
 
 export default function Layout({ user, currentSection, theme, onNavigate, onThemeToggle, onLogout, children }: LayoutProps) {
+  const [sidebarStats, setSidebarStats] = useState<DashboardStats | null>(null);
+  const [lastStatsUpdate, setLastStatsUpdate] = useState<Date>(new Date());
+
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: '📊', gradient: 'from-blue-500 to-blue-600' },
     { id: 'list', label: 'Lista de IoCs', icon: '📋', gradient: 'from-gray-500 to-gray-600' },
@@ -25,6 +30,29 @@ export default function Layout({ user, currentSection, theme, onNavigate, onThem
     { id: 'add-hash', label: 'Agregar Hash', icon: '#️⃣', gradient: 'from-orange-500 to-orange-600' },
     { id: 'export', label: 'Exportar', icon: '📤', gradient: 'from-indigo-500 to-indigo-600' },
   ];
+
+  // Cargar estadísticas para la sidebar
+  const loadSidebarStats = async () => {
+    try {
+      const stats = await IoCService.getDashboardStats();
+      setSidebarStats(stats);
+      setLastStatsUpdate(new Date());
+    } catch (error) {
+      console.error('Error cargando estadísticas de sidebar:', error);
+    }
+  };
+
+  // Efecto para cargar estadísticas iniciales y configurar actualización automática
+  useEffect(() => {
+    loadSidebarStats();
+
+    // Actualizar estadísticas cada 5 minutos (300 segundos)
+    const interval = setInterval(() => {
+      loadSidebarStats();
+    }, 300000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleLogout = () => {
     AuthService.logout();
@@ -51,6 +79,44 @@ export default function Layout({ user, currentSection, theme, onNavigate, onThem
     }
   };
 
+  // Componente para las estadísticas rápidas animadas
+  const QuickStat = ({ title, value, color, icon, isLoading }: {
+    title: string;
+    value: number;
+    color: string;
+    icon: string;
+    isLoading?: boolean;
+  }) => (
+    <div className={`flex justify-between items-center p-3 rounded-lg border transition-all duration-300 ${color}`}>
+      <div className="flex items-center">
+        <div className="w-3 h-3 bg-current rounded-full mr-3 animate-pulse opacity-70"></div>
+        <div>
+          <span className={`text-sm font-medium`}>
+            {title}
+          </span>
+          <div className="flex items-center space-x-1">
+            <span className="text-xs opacity-75">{icon}</span>
+            <span className="text-xs opacity-60">
+              {lastStatsUpdate.toLocaleTimeString('es-ES', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+              })}
+            </span>
+          </div>
+        </div>
+      </div>
+      <div className="text-right">
+        {isLoading ? (
+          <div className="w-6 h-6 animate-pulse bg-current opacity-50 rounded"></div>
+        ) : (
+          <span className={`font-bold text-lg transition-all duration-500`} key={value}>
+            {value}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className={`min-h-screen transition-colors duration-300 ${
       theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
@@ -64,7 +130,7 @@ export default function Layout({ user, currentSection, theme, onNavigate, onThem
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <div className="flex items-center">
-                  <div className="bg-gradient-to-br from-red-600 to-red-700 w-10 h-10 rounded-xl flex items-center justify-center mr-3 shadow-lg animate-glow">
+                  <div className="bg-gradient-to-br from-red-600 to-red-700 w-10 h-10 rounded-xl flex items-center justify-center mr-3 shadow-lg">
                     <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                     </svg>
@@ -165,63 +231,84 @@ export default function Layout({ user, currentSection, theme, onNavigate, onThem
             </div>
           </div>
 
-          {/* Stats rápidas en sidebar */}
+          {/* Stats rápidas en sidebar con actualización en tiempo real */}
           <div className={`p-4 border-t mt-8 ${theme === 'dark' ? 'border-gray-700' : 'border-gray-200'}`}>
-            <h3 className={`text-xs font-bold uppercase tracking-wide mb-4 flex items-center ${
-              theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
-            }`}>
-              <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M3,3V21H21V19H5V3H3M9,17H7V10H9V17M13,17H11V7H13V17M17,17H15V13H17V17Z"/>
-              </svg>
-              Estadísticas Rápidas
-            </h3>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-xs font-bold uppercase tracking-wide flex items-center ${
+                theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+              }`}>
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M3,3V21H21V19H5V3H3M9,17H7V10H9V17M13,17H11V7H13V17M17,17H15V13H17V17Z"/>
+                </svg>
+                Estadísticas en Vivo
+              </h3>
+              <button
+                onClick={loadSidebarStats}
+                className={`p-1 rounded transition-colors ${
+                  theme === 'dark' ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+                }`}
+                title="Actualizar estadísticas"
+              >
+                <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+                </svg>
+              </button>
+            </div>
+            
             <div className="space-y-3">
-              <div className={`flex justify-between items-center p-3 rounded-lg border ${
-                theme === 'dark' 
-                  ? 'bg-gradient-to-r from-blue-900/30 to-blue-800/30 border-blue-700' 
-                  : 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200'
-              }`}>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-blue-400 rounded-full mr-3 animate-pulse"></div>
-                  <span className={`text-sm font-medium ${
-                    theme === 'dark' ? 'text-blue-300' : 'text-blue-700'
-                  }`}>Total IoCs</span>
-                </div>
-                <span className={`font-bold ${
-                  theme === 'dark' ? 'text-blue-200' : 'text-blue-900'
-                }`}>-</span>
-              </div>
+              <QuickStat
+                title="Total IoCs"
+                value={sidebarStats?.totalIoCs || 0}
+                color={theme === 'dark' 
+                  ? 'bg-gradient-to-r from-blue-900/30 to-blue-800/30 border-blue-700 text-blue-300' 
+                  : 'bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200 text-blue-700'}
+                icon="🎯"
+                isLoading={!sidebarStats}
+              />
               
-              <div className={`flex justify-between items-center p-3 rounded-lg border ${
-                theme === 'dark' 
-                  ? 'bg-gradient-to-r from-yellow-900/30 to-yellow-800/30 border-yellow-700' 
-                  : 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200'
-              }`}>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-yellow-400 rounded-full mr-3 animate-pulse"></div>
-                  <span className={`text-sm font-medium ${
-                    theme === 'dark' ? 'text-yellow-300' : 'text-yellow-700'
-                  }`}>Pendientes</span>
-                </div>
-                <span className={`font-bold ${
-                  theme === 'dark' ? 'text-yellow-200' : 'text-yellow-900'
-                }`}>-</span>
-              </div>
+              <QuickStat
+                title="Pendientes"
+                value={sidebarStats?.iocsByStatus.pending || 0}
+                color={theme === 'dark' 
+                  ? 'bg-gradient-to-r from-yellow-900/30 to-yellow-800/30 border-yellow-700 text-yellow-300' 
+                  : 'bg-gradient-to-r from-yellow-50 to-yellow-100 border-yellow-200 text-yellow-700'}
+                icon="⏳"
+                isLoading={!sidebarStats}
+              />
               
-              <div className={`flex justify-between items-center p-3 rounded-lg border ${
-                theme === 'dark' 
-                  ? 'bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-700' 
-                  : 'bg-gradient-to-r from-green-50 to-green-100 border-green-200'
-              }`}>
-                <div className="flex items-center">
-                  <div className="w-2 h-2 bg-green-400 rounded-full mr-3 animate-pulse"></div>
-                  <span className={`text-sm font-medium ${
-                    theme === 'dark' ? 'text-green-300' : 'text-green-700'
-                  }`}>Aprobados</span>
-                </div>
-                <span className={`font-bold ${
-                  theme === 'dark' ? 'text-green-200' : 'text-green-900'
-                }`}>-</span>
+              <QuickStat
+                title="Aprobados"
+                value={sidebarStats?.iocsByStatus.approved || 0}
+                color={theme === 'dark' 
+                  ? 'bg-gradient-to-r from-green-900/30 to-green-800/30 border-green-700 text-green-300' 
+                  : 'bg-gradient-to-r from-green-50 to-green-100 border-green-200 text-green-700'}
+                icon="✅"
+                isLoading={!sidebarStats}
+              />
+
+              <QuickStat
+                title="Críticos"
+                value={sidebarStats?.iocsBySeverity.critical || 0}
+                color={theme === 'dark' 
+                  ? 'bg-gradient-to-r from-red-900/30 to-red-800/30 border-red-700 text-red-300' 
+                  : 'bg-gradient-to-r from-red-50 to-red-100 border-red-200 text-red-700'}
+                icon="🚨"
+                isLoading={!sidebarStats}
+              />
+            </div>
+
+            {/* Indicador de actualización automática */}
+            <div className={`mt-4 p-2 rounded-lg text-center ${
+              theme === 'dark' ? 'bg-gray-700' : 'bg-gray-100'
+            }`}>
+              <div className="flex items-center justify-center space-x-2">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                <span className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                  Actualización automática activa
+                </span>
+              </div>
+              <div className={`text-xs mt-1 ${theme === 'dark' ? 'text-gray-500' : 'text-gray-500'}`}>
+                Cada 5 minutos
               </div>
             </div>
 

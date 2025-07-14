@@ -1,7 +1,7 @@
 // components/Dashboard.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { DashboardStats } from '@/types';
 import { IoCService } from '@/lib/ioc';
 
@@ -15,25 +15,43 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [animationKey, setAnimationKey] = useState(0);
+  const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
 
-  useEffect(() => {
-    loadStats();
-  }, []);
 
-  const loadStats = async () => {
+  // Función para cargar estadísticas
+  const loadStats = useCallback(async (forceUpdate = false) => {
     try {
-      setLoading(true);
+      if (forceUpdate) {
+        setLoading(true);
+      }
       const dashboardStats = await IoCService.getDashboardStats();
       setStats(dashboardStats);
-      setAnimationKey(prev => prev + 1);
+      if (forceUpdate) {
+        setAnimationKey(prev => prev + 1);
+      }
+      setLastUpdate(new Date());
     } catch (error) {
       console.error('Error cargando estadísticas:', error);
     } finally {
-      setLoading(false);
+      if (forceUpdate) {
+        setLoading(false);
+      }
     }
-  };
+  }, []);
 
-  if (loading) {
+  // Efecto para carga inicial y actualización automática
+  useEffect(() => {
+    loadStats(true);
+
+    // Actualización automática cada 5 minutos (300 segundos)
+    const interval = setInterval(() => {
+      loadStats(false); // Sin animaciones para actualizaciones automáticas
+    }, 300000);
+
+    return () => clearInterval(interval);
+  }, [loadStats]);
+
+  if (loading && !stats) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="relative">
@@ -56,7 +74,7 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
           <h3 className={`text-lg font-medium mb-2 ${theme === 'dark' ? 'text-red-300' : 'text-red-800'}`}>Error de carga</h3>
           <p className={theme === 'dark' ? 'text-red-400' : 'text-red-600'}>No se pudieron cargar las estadísticas del dashboard</p>
           <button 
-            onClick={loadStats}
+            onClick={() => loadStats()}
             className="mt-4 btn-primary"
           >
             Reintentar
@@ -195,64 +213,91 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
     );
   };
 
-  // Datos para el gráfico de pastel
+  // Datos para el gráfico de pastel mejorado
   const pieData = Object.entries(stats.iocsBySeverity).map(([severity, count]) => ({
     name: getSeverityLabel(severity),
     value: count,
+    severity,
     color: severity === 'critical' ? '#ef4444' : 
            severity === 'high' ? '#f97316' :
-           severity === 'medium' ? '#eab308' : '#22c55e'
+           severity === 'medium' ? '#eab308' : '#22c55e',
+    percentage: stats.totalIoCs > 0 ? ((count / stats.totalIoCs) * 100).toFixed(1) : '0'
   }));
 
+  // Gráfico de pastel mejorado sin interactividad
   const PieChart = () => {
     const total = pieData.reduce((sum, item) => sum + item.value, 0);
     let cumulativePercentage = 0;
+    const radius = 80; // Radio más grande
+    const centerX = 120;
+    const centerY = 120;
 
     return (
-      <div className="flex items-center justify-center space-x-8">
-        <div className="relative">
-          <svg width="200" height="200" className="transform -rotate-90">
+      <div className="flex flex-col lg:flex-row items-center justify-center space-y-6 lg:space-y-0 lg:space-x-8">
+        <div className="relative flex-shrink-0">
+          <svg width="240" height="240" className="transform -rotate-90">
             {pieData.map((item, index) => {
-              const percentage = (item.value / total) * 100;
-              const strokeDasharray = `${percentage * 2.51} 251`;
-              const strokeDashoffset = -(cumulativePercentage * 2.51);
+              const percentage = total > 0 ? (item.value / total) * 100 : 0;
+              const strokeDasharray = `${percentage * 5.03} 503`; // Circunferencia = 2πr = 2π*80 ≈ 503
+              const strokeDashoffset = -(cumulativePercentage * 5.03);
               cumulativePercentage += percentage;
 
               return (
                 <circle
-                  key={index}
-                  cx="100"
-                  cy="100"
-                  r="40"
+                  key={`pie-${item.severity}-${index}`}
+                  cx={centerX}
+                  cy={centerY}
+                  r={radius}
                   fill="transparent"
                   stroke={item.color}
-                  strokeWidth="20"
+                  strokeWidth="24"
                   strokeDasharray={strokeDasharray}
                   strokeDashoffset={strokeDashoffset}
-                  className="transition-all duration-1000 hover:stroke-[25] cursor-pointer"
-                  style={{ animationDelay: `${index * 200}ms` }}
+                  className="drop-shadow-lg"
+                  style={{ 
+                    animationDelay: `${index * 200}ms`
+                  }}
                 />
               );
             })}
           </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="text-center">
-              <div className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{total}</div>
-              <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Total</div>
+              <div className={`text-3xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>{total}</div>
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Total IoCs</div>
             </div>
           </div>
         </div>
         
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 gap-3 min-w-[200px] flex-shrink-0">
           {pieData.map((item, index) => (
-            <div key={index} className="flex items-center space-x-3">
-              <div 
-                className="w-4 h-4 rounded-full"
-                style={{ backgroundColor: item.color }}
-              ></div>
-              <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
-                {item.name}: {item.value}
-              </span>
+            <div 
+              key={`legend-${item.severity}-${index}`}
+              className={`flex items-center justify-between p-3 rounded-lg border ${
+                theme === 'dark'
+                  ? 'bg-gray-800 border-gray-700'
+                  : 'bg-white border-gray-200'
+              }`}
+            >
+              <div className="flex items-center space-x-3">
+                <div 
+                  className="w-4 h-4 rounded-full shadow-sm flex-shrink-0"
+                  style={{ backgroundColor: item.color }}
+                ></div>
+                <div>
+                  <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-700'}`}>
+                    {item.name}
+                  </span>
+                  <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                    {item.percentage}% del total
+                  </div>
+                </div>
+              </div>
+              <div className="text-right flex-shrink-0">
+                <div className={`text-lg font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
+                  {item.value}
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -262,16 +307,63 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
 
   return (
     <div className="space-y-8">
-      {/* Header con toggle de tema */}
+      {/* Header mejorado sin estrella */}
       <div className={`card animate-fade-in ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
         <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
-              Dashboard
-            </h1>
-            <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>Resumen de Indicadores de Compromiso</p>
+          <div className="flex items-center space-x-4">
+          <button
+            onClick={() => loadStats(true)}
+            className={`p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg ${
+              loading ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 transition-transform duration-200'
+            }`}
+            disabled={loading}
+            title="Actualizar estadísticas"
+          >
+            <svg className={`w-8 h-8 text-white ${loading ? 'animate-spin' : ''}`} fill="currentColor" viewBox="0 0 24 24">
+              {loading ? (
+                <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+              ) : (
+                <path d="M3,3V21H21V19H5V3H3M9,17H7V10H9V17M13,17H11V7H13V17M17,17H15V13H17V17Z"/>
+              )}
+            </svg>
+          </button>
+            <div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-red-600 to-red-700 bg-clip-text text-transparent">
+                Dashboard
+              </h1>
+              <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+                Resumen de Indicadores de Compromiso
+              </p>
+              <div className="flex items-center mt-2 space-x-4">
+                <div className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  Última actualización: {lastUpdate.toLocaleTimeString('es-ES')}
+                </div>
+                <div className="flex items-center">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-1"></div>
+                  <span className={`text-xs ${theme === 'dark' ? 'text-green-400' : 'text-green-600'}`}>
+                    Actualizando cada 5 min
+                  </span>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex items-center space-x-4">
+            <button
+              onClick={() => loadStats()}
+              disabled={loading}
+              className={`p-3 rounded-xl transition-all duration-200 ${
+                loading
+                  ? 'opacity-50 cursor-not-allowed'
+                  : theme === 'dark'
+                    ? 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+              }`}
+              title="Actualizar estadísticas"
+            >
+              <svg className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} fill="currentColor" viewBox="0 0 24 24">
+                <path d="M17.65,6.35C16.2,4.9 14.21,4 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20C15.73,20 18.84,17.45 19.73,14H17.65C16.83,16.33 14.61,18 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6C13.66,6 15.14,6.69 16.22,7.78L13,11H20V4L17.65,6.35Z"/>
+              </svg>
+            </button>
             <button
               onClick={onThemeToggle}
               className={`p-3 rounded-xl transition-all duration-200 ${
@@ -290,18 +382,11 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
                 </svg>
               )}
             </button>
-            <div className="animate-float">
-              <div className="p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg">
-                <svg className="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                </svg>
-              </div>
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Tarjetas de estadísticas */}
+      {/* Tarjetas de estadísticas con actualización en tiempo real */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard
           title="Total IoCs"
@@ -359,7 +444,7 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
           </div>
         </div>
 
-        {/* Gráfico de pastel para severidad */}
+        {/* Gráfico de pastel mejorado e interactivo */}
         <div className={`card animate-slide-in-right ${theme === 'dark' ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`} style={{ animationDelay: '500ms' }}>
           <div className="flex items-center justify-between mb-6">
             <h3 className={`text-xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>IoCs por Severidad</h3>
@@ -561,4 +646,4 @@ export default function Dashboard({ onNavigate, theme, onThemeToggle }: Dashboar
       </div>
     </div>
   );
-}// components/Dashboard.tsx
+}
